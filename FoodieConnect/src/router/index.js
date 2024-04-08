@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/components/Login.vue";
 import Logout from "../components/Logout.vue";
-import Home from "@/views/Homepage.vue";
 import About from "@/views/About.vue";
 import Homepage from "@/views/Homepage.vue";
 import ProfileView from "@/views/ProfileView.vue";
 import UpdateProfile from "@/views/UpdateProfile.vue";
+import PostPage from "@/views/PostPage.vue";
 
 const routes = [
   {
@@ -20,7 +20,7 @@ const routes = [
   },
   {
     path: "/home",
-    name: "Home", // Assuming you want to navigate to Home component via '/home' path
+    name: "Home", 
     component: Homepage,
   },
   {
@@ -37,6 +37,11 @@ const routes = [
     path: "/update-profile", // Add this route for UpdateProfile
     name: "UpdateProfile",
     component: UpdateProfile,
+  },
+  {
+    path: "/post", // Add this route for UpdateProfile
+    name: "Post",
+    component: PostPage,
   },
 ];
 const router = createRouter({
