@@ -6,6 +6,8 @@ import Homepage from "@/views/Homepage.vue";
 import ProfileView from "@/views/ProfileView.vue";
 import UpdateProfile from "@/views/UpdateProfile.vue";
 import PostPage from "@/views/PostPage.vue";
+import PostDetailView from "@/views/PostDetailView.vue";
+
 
 const routes = [
   {
@@ -39,9 +41,10 @@ const routes = [
     component: UpdateProfile,
   },
   {
-    path: "/post", // Add this route for UpdateProfile
-    name: "Post",
-    component: PostPage,
+    path: '/post/:id',
+    name: 'post',
+    component: PostDetailView,
+    props: true
   },
 ];
 const router = createRouter({

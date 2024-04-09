@@ -56,8 +56,12 @@
 <script>
 import db from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import Comment from '@/components/Comment.vue';
 
 export default {
+  components: {
+    Comment
+  },
   data() {
     return {
       photo: null,

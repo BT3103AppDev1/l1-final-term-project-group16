@@ -3,10 +3,13 @@
     <h1 class="title">FoodieConnect</h1>
     <div class="content">
       <div v-for="(post, index) in posts" :key="index" class="post">
-        <img v-if="post.photoUrl" :src="post.photoUrl" alt="Post" style="max-width: 100%;">
-        <h2>{{ post.title }}</h2>
-        <p>{{ post.caption }}</p>
-        <p>{{ post.hashtags }}</p>
+        <!-- Wrap the post content with router-link -->
+        <router-link :to="{ name: 'post', params: { id: post.id }}">
+          <img v-if="post.photoUrl" :src="post.photoUrl" alt="Post" class="post-image">
+          <h2>{{ post.title }}</h2>
+          <p>{{ post.caption }}</p>
+          <p>{{ post.hashtags }}</p>
+        </router-link>
       </div>
     </div>
     <div class="footer">
@@ -15,9 +18,9 @@
   </div>
 </template>
 
+
 <script>
 import { db } from '@/firebase.js';
-// import { collection, getDocs } from 'firebase/firestore';
 
 export default {
   data() {
@@ -27,19 +30,20 @@ export default {
   },
   async mounted() {
     try {
-      console.log(db);
-
       const querySnapshot = await db.collection('posts').get();
       querySnapshot.forEach((doc) => {
-        this.posts.push(doc.data());
+        // Include the document ID in the post object
+        let postData = doc.data();
+        postData.id = doc.id;
+        this.posts.push(postData);
       });
-
     } catch (error) {
       console.error('Error fetching posts: ', error);
     }
   }
 }
 </script>
+
 
 <style scoped>
 .home {
