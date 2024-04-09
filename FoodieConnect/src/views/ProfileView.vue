@@ -1,6 +1,5 @@
 <template>
     <div class="profile-page">
-        <sidebar></sidebar>
         <div class="profile-content">
             <div class="profile-header">
                 <h1>Profile</h1>
@@ -12,6 +11,7 @@
         </div>
     </div>
 </template>
+
 
 <script>
 import ProfileItem from '../components/ProfileItem.vue';
