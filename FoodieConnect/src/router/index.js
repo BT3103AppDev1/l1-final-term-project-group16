@@ -51,6 +51,11 @@ const routes = [
     name: "UpdatePreference",
     component: UpdatePreference,
   },
+  {
+    path:"/postpage",
+    name:"postpage",
+    component: PostPage,
+  }
 ];
 const router = createRouter({
   history: createWebHistory(),
