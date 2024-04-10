@@ -27,8 +27,11 @@ export default {
 <style scoped>
 #sidebar {
     background-color: #7b1c2a;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 220px;
-    min-height: 100vh;
+    height: 100%;
     box-shadow: 3px 0 6px rgba(0, 0, 0, 0.2);
     padding: 20px;
     display: flex;
