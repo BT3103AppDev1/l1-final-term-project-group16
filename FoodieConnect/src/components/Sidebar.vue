@@ -28,7 +28,7 @@ export default {
 #sidebar {
     background-color: #7b1c2a;
     width: 220px;
-    height: 100vh;
+    min-height: 100vh;
     box-shadow: 3px 0 6px rgba(0, 0, 0, 0.2);
     padding: 20px;
     display: flex;

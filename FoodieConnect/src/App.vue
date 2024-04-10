@@ -14,8 +14,9 @@ import Sidebar from '@/components/Sidebar.vue'
 
 <style>
 #app {
-  display: flex;
-  height: 100vh;
+  display: grid;
+  grid-template-columns: 220px 1fr; 
+  min-height: 100vh;
 }
 
 .main-content {
