@@ -54,4 +54,9 @@ export default {
 .menu-item:hover {
     background-color: #a05252;
 }
+
+.menu-item.router-link-exact-active {
+    background-color: #a05252; 
+    color: white;
+}
 </style>
