@@ -24,17 +24,13 @@ export default {
 }
 
 .main-content {
-    flex: 1;
     /* Allows content to fill up the remaining space */
-    padding: 20px;
-    margin-left: 220px;
     /* This should be the width of your sidebar */
-    max-width: calc(100% - 220px);
     /* Adjust the max-width to account for the sidebar */
     display: flex;
     justify-content: center;
     /* Centers the ProfileCard horizontally if there's extra space */
-    align-items: flex-start;
+    align-items: center;
     /* Aligns content to the top */
 }
 </style>
