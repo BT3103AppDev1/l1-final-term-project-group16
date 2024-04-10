@@ -11,18 +11,23 @@
       <button @click="searchPosts" class="search-button">Search</button>
     </div>
     <div class="content">
-      <div v-for="(post, index) in filteredPosts" :key="index" class="post">
-        <div class="post-content">
-          <img v-if="post.photoUrl" :src="post.photoUrl" alt="Post" style="max-width: 100%;">
-          <h2>{{ post.title }}</h2>
-          <button v-if="!post.fullPost" @click="showFullPost(index)" class="see-more">See More</button>
-          <modal v-if="post.fullPost" @close="hideFullPost(index)">
-            <h2 slot="header">{{ post.title }}</h2>
+      <!-- Wrap the post content with router-link to make it clickable -->
+      <router-link v-for="(post, index) in filteredPosts" :key="index" :to="{ name: 'post', params: { id: post.id } }"
+        class="post-link">
+        <div class="post">
+          <div class="post-content">
+            <img v-if="post.photoUrl" :src="post.photoUrl" alt="Post" class="post-image">
+            <h2>{{ post.title }}</h2>
             <p>{{ post.caption }}</p>
-            <p>{{ post.hashtags }}</p>
-          </modal>
+            <!-- Display hashtags -->
+            <div class="hashtags">
+              <span v-for="hashtag in post.hashtags.split(',')" :key="hashtag" class="hashtag">
+                #{{ hashtag.trim() }}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </router-link>
     </div>
     <div class="footer">
       <router-link class="add-post" to="/post">+</router-link>
@@ -32,31 +37,30 @@
 
 <script>
 import { collection, getDocs, onSnapshot } from 'firebase/firestore';
-import {firebase,db }from '@/firebase';
+import { firebase, db } from '@/firebase';
 
 export default {
   data() {
     return {
       posts: [],
       searchQuery: '',
-      isSearchActivated: false,
       selectedTag: '',
       tags: []
     };
   },
   mounted() {
     this.fetchPosts();
-    this.setupPostListener();
   },
   methods: {
     async fetchPosts() {
       try {
         const querySnapshot = await getDocs(collection(db, 'posts'));
         querySnapshot.forEach(doc => {
-          const post = { ...doc.data(), fullPost: false };
+          const post = { id: doc.id, ...doc.data() };
           this.posts.push(post);
+          // Extract and store unique tags from hashtags
           post.hashtags.split(',').forEach(tag => {
-            if (!this.tags.includes(tag.trim())) {
+            if (tag.trim() && !this.tags.includes(tag.trim())) {
               this.tags.push(tag.trim());
             }
           });
@@ -65,84 +69,34 @@ export default {
         console.error('Error fetching posts:', error);
       }
     },
-    setupPostListener() {
-      const unsubscribe = onSnapshot(collection(db, 'posts'), snapshot => {
-        snapshot.docChanges().forEach(change => {
-          if (change.type === 'added') {
-            const newPost = { ...change.doc.data(), fullPost: false };
-            if (!this.posts.some(post => post.id === newPost.id)) {
-              this.posts.unshift(newPost);
-              newPost.hashtags.split(',').forEach(tag => {
-                if (!this.tags.includes(tag.trim())) {
-                  this.tags.push(tag.trim());
-                }
-              });
-            }
-          }
-        });
-      });
-    },
-    filterPosts() {
-      let filteredPosts = this.posts;
-      const searchTerm = this.searchQuery.toLowerCase().trim();
-      const selectedTag = this.selectedTag.trim();
-      if (searchTerm) {
-        filteredPosts = filteredPosts.filter(post =>
-          post.title.toLowerCase().includes(searchTerm) ||
-          post.caption.toLowerCase().includes(searchTerm) ||
-          post.hashtags.toLowerCase().includes(searchTerm)
-        );
-      }
-      if (selectedTag) {
-        filteredPosts = filteredPosts.filter(post =>
-          post.hashtags.split(',').map(tag => tag.trim()).includes(selectedTag)
-        );
-      }
-      return filteredPosts;
-    },
     searchPosts() {
       this.filteredPosts = this.filterPosts();
       this.isSearchActivated = true;
     },
     showFullPost(index) {
-  this.posts[index].fullPost = true;
-},
+      this.posts[index].fullPost = true;
+    },
 
-    
+
     hideFullPost(index) {
       this.$set(this.posts[index], 'fullPost', false);
     }
   },
   computed: {
     filteredPosts() {
-      if (this.isSearchActivated) {
-        return this.filterPosts();
-      } else {
-        return this.posts;
+      let result = this.posts;
+      if (this.searchQuery) {
+        const searchLower = this.searchQuery.toLowerCase();
+        result = result.filter(post =>
+          post.title.toLowerCase().includes(searchLower) ||
+          post.caption.toLowerCase().includes(searchLower) ||
+          post.hashtags.toLowerCase().includes(searchLower)
+        );
       }
-    }
-  },
-  components: {
-    Modal: {
-      template: `
-        <transition name="modal">
-          <div class="modal-mask" @click="$emit('close')">
-            <div class="modal-wrapper">
-              <div class="modal-container">
-                <div class="modal-header">
-                  <slot name="header"></slot>
-                  <button class="modal-default-button" @click="$emit('close')">
-                    X
-                  </button>
-                </div>
-                <div class="modal-body">
-                  <slot></slot>
-                </div>
-              </div>
-            </div>
-          </div>
-        </transition>
-      `
+      if (this.selectedTag) {
+        result = result.filter(post => post.hashtags.includes(this.selectedTag));
+      }
+      return result;
     }
   }
 }
@@ -188,7 +142,7 @@ export default {
   line-height: 60px;
   border-radius: 50%;
   text-decoration: none;
-  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
 }
 
 .add-post:hover {
