@@ -5,14 +5,14 @@
       <form @submit.prevent="submitForm" class="form">
         <div class="title-container">
           <label for="title" class="label">Title:</label>
-          <input type="text" id="title" v-model="title" class="input-title">
+          <input type="text" id="title" v-model="title" class="input input-title" placeholder="Enter title">
         </div>
         <div class="content-container">
           <div class="left-column">
             <div class="form-group photo-group">
               <label for="photo" class="label">Photo:</label>
               <div class="photo-container">
-                <input type="file" id="photo" @change="handlePhotoChange" accept="image/*" class="input-photo">
+                <input type="file" id="photo" @change="handlePhotoChange" accept="image/*" class="input input-photo">
                 <div v-if="photoUrl" class="photo-preview">
                   <img :src="photoUrl" alt="Preview" class="preview-image">
                 </div>
@@ -26,28 +26,28 @@
             <div class="form-group">
               <label for="hashtags" class="label">Hashtags:</label>
               <div class="hashtag-input-container">
-                <input type="text" id="hashtags" v-model="hashtags" class="input" readonly @click="showHashtagPopup">
+                <input type="text" id="hashtags" v-model="hashtags" class="input input-hashtags" readonly @click="showHashtagPopup" placeholder="Select hashtags">
                 <div v-if="showPopup" class="hashtag-popup">
                   <div class="hashtag-options">
                     <div v-for="tag in hashtagOptions" :key="tag" @click="toggleHashtag(tag)" :class="{ active: selectedHashtags.includes(tag) }">{{ tag }}</div>
                   </div>
-                  <button @click="confirmHashtags">Confirm</button>
+                  <button class="confirm-button" @click="confirmHashtags">Confirm</button>
                 </div>
               </div>
             </div>
             <div class="form-group">
               <label for="caption" class="label">Caption:</label>
-              <textarea id="caption" rows="4" v-model="caption" class="input"></textarea>
+              <textarea id="caption" rows="4" v-model="caption" class="input input-caption" placeholder="Enter caption"></textarea>
             </div>
           </div>
         </div>
-        <button type="submit" class="submit-button" @click='clearSelectedHashtags'>Submit</button>
+        <button type="submit" class="submit-button">Submit</button>
       </form>
     </div>
     <div v-if="showWarning" class="modal">
       <div class="modal-content">
         <span class="close" @click="hideWarning">&times;</span>
-        <p>Please fill out all fields before submitting.</p>
+        <p class="warning-message">Please fill out all fields before submitting.</p>
       </div>
     </div>
   </div>
@@ -56,12 +56,8 @@
 <script>
 import db from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
-import Comment from '@/components/Comment.vue';
 
 export default {
-  components: {
-    Comment
-  },
   data() {
     return {
       photo: null,
@@ -106,10 +102,10 @@ export default {
 
       try {
         this.clearForm();
+        this.$router.push('/');
         const docRef = await addDoc(collection(db, 'posts'), postData);
         console.log('Post added with ID: ', docRef.id);
-        this.$emit('postSubmitted', postData);
-        this.clearForm();
+        this.$emit('postSubmitted', postData); // Emit event with submitted post data
       } catch (error) {
         console.error('Error adding post: ', error);
       }
@@ -163,13 +159,15 @@ export default {
 }
 
 .form-container {
-  max-width: 1000px; /* Increase the maximum width */
+  width: 90%; /* Adjust width */
+  max-width: 1200px; /* Limit maximum width */
   margin: 0 auto;
 }
 
 .form {
   display: flex;
   flex-direction: column;
+  width: 100%; /* Adjust width */
 }
 
 .title-container {
@@ -196,34 +194,36 @@ export default {
 
 .left-column {
   flex: 1;
+  margin-right: 20px;
 }
 
 .right-column {
-  flex: auto;
+  flex: 1;
+  margin-left: 20px;
 }
 
 .photo-container {
-  position: relative; /* Make it a positioned container */
+  position: relative;
   width: 100%;
-  height: 300px; /* Set a fixed height */
+  height: 300px;
   border: 1px solid #ccc;
   border-radius: 5px;
 }
 
 .input-photo {
-  position: absolute; /* Position the input element */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0; /* Hide the input element */
+  opacity: 0;
   cursor: pointer;
 }
 
 .preview-image {
-  width: 100%; /* Make the image fill up the entire container */
-  height: 100%; /* Make the image fill up the entire container */
-  object-fit: cover; /* Ensure the image covers the entire container */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .photo-placeholder {
@@ -245,17 +245,19 @@ export default {
 }
 
 .textarea {
+  width: calc(100% - 10px);
   resize: vertical;
 }
 
 .submit-button {
+  width: 100%;
+  padding: 15px;
   margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 1em;
   background-color: #4CAF50;
   color: white;
   border: none;
   border-radius: 5px;
+  font-size: 1.2em;
   cursor: pointer;
 }
 
@@ -264,37 +266,36 @@ export default {
 }
 
 .modal {
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: fixed;
-  z-index: 1;
-  left: 0;
   top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 }
 
 .modal-content {
   background-color: #fefefe;
-  margin: 15% auto;
   padding: 20px;
-  border: 1px solid #888;
   border-radius: 5px;
-  width: 70%;
+  text-align: center;
+  position: relative;
 }
 
 .close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.5em;
+  cursor: pointer;
 }
 
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
+.warning-message {
+  color: red;
 }
 
 .hashtag-input-container {
@@ -330,4 +331,20 @@ export default {
 .hashtag-options div.active {
   background-color: #f0f0f0;
 }
+
+.confirm-button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.confirm-button:hover {
+  background-color: #45a049;
+}
 </style>
+

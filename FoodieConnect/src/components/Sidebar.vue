@@ -1,9 +1,9 @@
 <template>
     <div id="sidebar">
-        <RouterLink to="/" class="menu-item">Home</RouterLink>
+        <RouterLink to="/homepage" class="menu-item">Home</RouterLink>
         <RouterLink to="/profile" class="menu-item">Profile</RouterLink>
         <RouterLink to="/food-diary" class="menu-item">Food Diary</RouterLink>
-        <RouterLink to="/new-post" class="menu-item">New Post</RouterLink>
+        <RouterLink to="/postpage" class="menu-item">New Post</RouterLink>
         <RouterLink to="/saved-list" class="menu-item">Saved List</RouterLink>
         <RouterLink to="/food-near-me" class="menu-item">Food Near Me</RouterLink>
         <RouterLink to="/communities" class="menu-item">Communities</RouterLink>
@@ -53,5 +53,10 @@ export default {
 
 .menu-item:hover {
     background-color: #a05252;
+}
+
+.menu-item.router-link-exact-active {
+    background-color: #a05252; 
+    color: white;
 }
 </style>
