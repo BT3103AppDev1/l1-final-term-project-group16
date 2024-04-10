@@ -8,6 +8,7 @@ import UpdateProfile from "@/views/UpdateProfile.vue";
 import PostPage from "@/views/PostPage.vue";
 import PostDetailView from "@/views/PostDetailView.vue";
 import UpdatePreference from "@/views/UpdatePreference.vue";
+import SavedList from "@/views/SavedList.vue";
 
 const routes = [
   {
@@ -55,6 +56,11 @@ const routes = [
     path:"/postpage",
     name:"postpage",
     component: PostPage,
+  },
+  {
+    path: "/saved-list", // Define the path for the saved list page
+    name: "SavedList",
+    component: SavedList,
   }
 ];
 const router = createRouter({
