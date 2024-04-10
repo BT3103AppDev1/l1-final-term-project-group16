@@ -69,9 +69,20 @@ export default {
         updateProfile() {
             const user = firebase.auth().currentUser;
             if (user) {
+                // First, update the local Firebase Authentication profile
                 user.updateProfile({
                     displayName: this.profile.username,
-                    // Add logic to handle photoURL update if needed
+                    photoURL: this.profile.photoURL, // Assuming you handle the photoURL update elsewhere
+                }).then(() => {
+                    // Then, update the Firestore document for this user
+                    const userProfileRef = firebase.firestore().collection('user_profile').doc(user.uid);
+                    return userProfileRef.update({
+                        name: this.profile.name,
+                        gender: this.profile.gender,
+                        birthday: this.profile.birthday,
+                        emailNotifications: this.profile.email,
+                        profile_pic: this.profile.profile_pic // Assuming this field should be updated as well
+                    });
                 }).then(() => {
                     console.log('Profile updated successfully');
                     alert('You have finished setting up your profile!');
@@ -138,11 +149,14 @@ export default {
     background-color: #f0f0f0;
     padding: 40px;
     border-radius: 20px;
-    width: 60%;
-    max-width: 600px;
+    width: 100%;
+    /* If you want the card to be full width of the container */
+    max-width: 100%;
+    /* Adjust this value to your preference */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin: auto;
+    /* Other styles... */
 }
+
 
 .profile-card h2 {
     border-bottom: 1px solid #ccc;

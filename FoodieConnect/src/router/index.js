@@ -1,11 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/components/Login.vue";
 import Logout from "../components/Logout.vue";
-import Home from "@/views/Homepage.vue";
 import About from "@/views/About.vue";
 import Homepage from "@/views/Homepage.vue";
 import ProfileView from "@/views/ProfileView.vue";
 import UpdateProfile from "@/views/UpdateProfile.vue";
+import PostPage from "@/views/PostPage.vue";
+import PostDetailView from "@/views/PostDetailView.vue";
+import UpdatePreference from "@/views/UpdatePreference.vue";
 
 const routes = [
   {
@@ -19,8 +21,8 @@ const routes = [
     component: Logout,
   },
   {
-    path: "/home",
-    name: "Home", // Assuming you want to navigate to Home component via '/home' path
+    path: "/homepage",
+    name: "Homepage",
     component: Homepage,
   },
   {
@@ -38,6 +40,22 @@ const routes = [
     name: "UpdateProfile",
     component: UpdateProfile,
   },
+  {
+    path: "/post/:id",
+    name: "post",
+    component: PostDetailView,
+    props: true,
+  },
+  {
+    path: "/update-preference",
+    name: "UpdatePreference",
+    component: UpdatePreference,
+  },
+  {
+    path:"/postpage",
+    name:"postpage",
+    component: PostPage,
+  }
 ];
 const router = createRouter({
   history: createWebHistory(),

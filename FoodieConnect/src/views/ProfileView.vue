@@ -1,6 +1,5 @@
 <template>
     <div class="profile-page">
-        <sidebar></sidebar>
         <div class="profile-content">
             <div class="profile-header">
                 <h1>Profile</h1>
@@ -8,21 +7,22 @@
             <router-link to="/update-profile" class="profile-link">
                 <profile-item title="User Profile" description="Edit your personal details"></profile-item>
             </router-link>
-            <profile-item title="Preferences" description="Change your preferences"></profile-item>
+            <router-link to="/update-preference" class="profile-link">
+                <profile-item title="Preferences" description="Change your preferences"></profile-item>
+            </router-link>
         </div>
     </div>
 </template>
 
+
 <script>
 import ProfileItem from '../components/ProfileItem.vue';
-import Sidebar from '../components/Sidebar.vue';
 import { RouterLink } from 'vue-router';
 
 
 export default {
     components: {
         ProfileItem,
-        Sidebar,
         RouterLink,
     },
 };
