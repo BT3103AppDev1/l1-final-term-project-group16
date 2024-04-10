@@ -7,7 +7,7 @@ import ProfileView from "@/views/ProfileView.vue";
 import UpdateProfile from "@/views/UpdateProfile.vue";
 import PostPage from "@/views/PostPage.vue";
 import PostDetailView from "@/views/PostDetailView.vue";
-
+import UpdatePreference from "@/views/UpdatePreference.vue";
 
 const routes = [
   {
@@ -22,7 +22,7 @@ const routes = [
   },
   {
     path: "/homepage",
-    name: "Homepage", 
+    name: "Homepage",
     component: Homepage,
   },
   {
@@ -41,10 +41,15 @@ const routes = [
     component: UpdateProfile,
   },
   {
-    path: '/post/:id',
-    name: 'post',
+    path: "/post/:id",
+    name: "post",
     component: PostDetailView,
-    props: true
+    props: true,
+  },
+  {
+    path: "/update-preference",
+    name: "UpdatePreference",
+    component: UpdatePreference,
   },
 ];
 const router = createRouter({

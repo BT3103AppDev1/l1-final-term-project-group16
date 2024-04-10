@@ -1,6 +1,5 @@
 <template>
     <div class="update-profile-page">
-        <Sidebar />
         <div class="main-content">
             <ProfileCard />
         </div>
@@ -8,30 +7,34 @@
 </template>
 
 <script>
-import Sidebar from '@/components/Sidebar.vue'; // Make sure the path is correct
-import ProfileCard from '@/components/ProfileCard.vue'; // Make sure the path is correct
+import ProfileCard from '@/components/ProfileCard.vue';
 
 export default {
     components: {
-        Sidebar,
-        ProfileCard,
-    },
+        ProfileCard
+    }
 };
 </script>
 
 <style scoped>
 .update-profile-page {
     display: flex;
-    background-color: #fff;
-    /* Assuming a white background for the overall layout */
+    flex-direction: row;
+    /* Ensure the layout is horizontal */
 }
 
 .main-content {
-    flex-grow: 1;
-    padding: 40px;
+    flex: 1;
+    /* Allows content to fill up the remaining space */
+    padding: 20px;
+    margin-left: 220px;
+    /* This should be the width of your sidebar */
+    max-width: calc(100% - 220px);
+    /* Adjust the max-width to account for the sidebar */
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    /* Centers the ProfileCard horizontally if there's extra space */
+    align-items: flex-start;
+    /* Aligns content to the top */
 }
 </style>

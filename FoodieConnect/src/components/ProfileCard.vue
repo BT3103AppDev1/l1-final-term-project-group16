@@ -138,10 +138,12 @@ export default {
     background-color: #f0f0f0;
     padding: 40px;
     border-radius: 20px;
-    width: 60%;
-    max-width: 600px;
+
+    /* Adjust this value to change the width of the grey box */
+    width: 100%;
+    /* Ensures it doesn't expand beyond max-width */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin: auto;
+
 }
 
 .profile-card h2 {
