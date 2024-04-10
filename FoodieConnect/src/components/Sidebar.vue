@@ -1,6 +1,6 @@
 <template>
     <div id="sidebar">
-        <RouterLink to="/" class="menu-item">Home</RouterLink>
+        <RouterLink to="/homepage" class="menu-item">Home</RouterLink>
         <RouterLink to="/profile" class="menu-item">Profile</RouterLink>
         <RouterLink to="/food-diary" class="menu-item">Food Diary</RouterLink>
         <RouterLink to="/new-post" class="menu-item">New Post</RouterLink>

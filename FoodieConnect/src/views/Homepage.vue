@@ -1,15 +1,27 @@
 <template>
   <div class="home">
     <h1 class="title">FoodieConnect</h1>
+    <!-- Search bar -->
+    <div class="search-container">
+      <input type="text" v-model="searchQuery" placeholder="Search posts..." class="search-bar">
+      <select v-model="selectedTag" class="tag-filter">
+        <option value="">All Tags</option>
+        <option v-for="tag in tags" :key="tag" :value="tag">{{ tag }}</option>
+      </select>
+      <button @click="searchPosts" class="search-button">Search</button>
+    </div>
     <div class="content">
-      <div v-for="(post, index) in posts" :key="index" class="post">
-        <!-- Wrap the post content with router-link -->
-        <router-link :to="{ name: 'post', params: { id: post.id }}">
-          <img v-if="post.photoUrl" :src="post.photoUrl" alt="Post" class="post-image">
+      <div v-for="(post, index) in filteredPosts" :key="index" class="post">
+        <div class="post-content">
+          <img v-if="post.photoUrl" :src="post.photoUrl" alt="Post" style="max-width: 100%;">
           <h2>{{ post.title }}</h2>
-          <p>{{ post.caption }}</p>
-          <p>{{ post.hashtags }}</p>
-        </router-link>
+          <button v-if="!post.fullPost" @click="showFullPost(index)" class="see-more">See More</button>
+          <modal v-if="post.fullPost" @close="hideFullPost(index)">
+            <h2 slot="header">{{ post.title }}</h2>
+            <p>{{ post.caption }}</p>
+            <p>{{ post.hashtags }}</p>
+          </modal>
+        </div>
       </div>
     </div>
     <div class="footer">
@@ -18,34 +30,126 @@
   </div>
 </template>
 
-
 <script>
-import { db } from '@/firebase.js';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
+import {firebase,db }from '@/firebase';
 
 export default {
   data() {
     return {
-      posts: []
+      posts: [],
+      searchQuery: '',
+      isSearchActivated: false,
+      selectedTag: '',
+      tags: []
     };
   },
-  async mounted() {
-    try {
-      const querySnapshot = await db.collection('posts').get();
-      querySnapshot.forEach((doc) => {
-        // Include the document ID in the post object
-        let postData = doc.data();
-        postData.id = doc.id;
-        this.posts.push(postData);
+  mounted() {
+    this.fetchPosts();
+    this.setupPostListener();
+  },
+  methods: {
+    async fetchPosts() {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'posts'));
+        querySnapshot.forEach(doc => {
+          const post = { ...doc.data(), fullPost: false };
+          this.posts.push(post);
+          post.hashtags.split(',').forEach(tag => {
+            if (!this.tags.includes(tag.trim())) {
+              this.tags.push(tag.trim());
+            }
+          });
+        });
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    },
+    setupPostListener() {
+      const unsubscribe = onSnapshot(collection(db, 'posts'), snapshot => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const newPost = { ...change.doc.data(), fullPost: false };
+            if (!this.posts.some(post => post.id === newPost.id)) {
+              this.posts.unshift(newPost);
+              newPost.hashtags.split(',').forEach(tag => {
+                if (!this.tags.includes(tag.trim())) {
+                  this.tags.push(tag.trim());
+                }
+              });
+            }
+          }
+        });
       });
-    } catch (error) {
-      console.error('Error fetching posts: ', error);
+    },
+    filterPosts() {
+      let filteredPosts = this.posts;
+      const searchTerm = this.searchQuery.toLowerCase().trim();
+      const selectedTag = this.selectedTag.trim();
+      if (searchTerm) {
+        filteredPosts = filteredPosts.filter(post =>
+          post.title.toLowerCase().includes(searchTerm) ||
+          post.caption.toLowerCase().includes(searchTerm) ||
+          post.hashtags.toLowerCase().includes(searchTerm)
+        );
+      }
+      if (selectedTag) {
+        filteredPosts = filteredPosts.filter(post =>
+          post.hashtags.split(',').map(tag => tag.trim()).includes(selectedTag)
+        );
+      }
+      return filteredPosts;
+    },
+    searchPosts() {
+      this.filteredPosts = this.filterPosts();
+      this.isSearchActivated = true;
+    },
+    showFullPost(index) {
+  this.posts[index].fullPost = true;
+},
+
+    
+    hideFullPost(index) {
+      this.$set(this.posts[index], 'fullPost', false);
+    }
+  },
+  computed: {
+    filteredPosts() {
+      if (this.isSearchActivated) {
+        return this.filterPosts();
+      } else {
+        return this.posts;
+      }
+    }
+  },
+  components: {
+    Modal: {
+      template: `
+        <transition name="modal">
+          <div class="modal-mask" @click="$emit('close')">
+            <div class="modal-wrapper">
+              <div class="modal-container">
+                <div class="modal-header">
+                  <slot name="header"></slot>
+                  <button class="modal-default-button" @click="$emit('close')">
+                    X
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <slot></slot>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      `
     }
   }
 }
 </script>
 
-
 <style scoped>
+/* Original CSS */
 .home {
   text-align: center;
 }
@@ -70,8 +174,7 @@ export default {
 .footer {
   position: fixed;
   bottom: 20px;
-  left: 20px;
-  /* Adjusted to move the button to the bottom left corner */
+  right: 20px;
 }
 
 .add-post {
@@ -85,10 +188,52 @@ export default {
   line-height: 60px;
   border-radius: 50%;
   text-decoration: none;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
 }
 
 .add-post:hover {
   background-color: #45a049;
+}
+
+.search-container {
+  margin-bottom: 10px;
+}
+
+.search-bar {
+  width: 70%;
+  height: 40px;
+  font-size: 16px;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.search-button {
+  height: 40px;
+  font-size: 16px;
+  padding: 5px 15px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.search-button:hover {
+  background-color: #45a049;
+}
+
+.tag-filter {
+  height: 40px;
+  font-size: 16px;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-left: 10px;
+}
+
+.see-more {
+  cursor: pointer;
 }
 </style>
