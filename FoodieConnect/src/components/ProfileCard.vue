@@ -32,9 +32,10 @@
                 </label>
             </div>
             <div class="form-group">
-                <input type="submit" value="Update">
+                <input type="submit" value="Update" :disabled="loading">
             </div>
         </form>
+        <div v-if="loading">Uploading image...</div>
     </div>
 </template>
 
@@ -48,9 +49,10 @@ export default {
                 username: '',
                 gender: '',
                 dob: '',
-                emailNotifications: false,
+                emailNotifications: '',
                 photoURL: '', // Profile picture URL
-            }
+            },
+            loading: false
         };
     },
     created() {
@@ -58,41 +60,53 @@ export default {
     },
     methods: {
         fetchUserProfile() {
-            firebase.auth().onAuthStateChanged((user) => {
-                if (user) {
-                    // Set the default values from Firebase user data
-                    this.profile.username = user.displayName;
-                    this.profile.photoURL = user.photoURL;
-                }
-            });
+            const user = firebase.auth().currentUser;
+            if (user) {
+                const userProfileRef = firebase.firestore().collection('user_profile').doc(user.uid);
+                userProfileRef.get().then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        this.profile.username = data.name || user.displayName;
+                        this.profile.gender = data.gender;
+                        this.profile.dob = data.birthday;
+                        this.profile.emailNotifications = data.email;
+                        this.profile.photoURL = data.profile_pic || user.photoURL; // Make sure this is the permanent URL from Firebase Storage
+                        console.log('Fetched user profile:', data); // Add this line for debugging
+                    }
+                }).catch(error => {
+                    console.error("Error fetching user profile:", error);
+                });
+            }
         },
+
+
         updateProfile() {
             const user = firebase.auth().currentUser;
             if (user) {
-                // First, update the local Firebase Authentication profile
                 user.updateProfile({
                     displayName: this.profile.username,
-                    photoURL: this.profile.photoURL, // Assuming you handle the photoURL update elsewhere
+                    photoURL: this.profile.photoURL,
                 }).then(() => {
-                    // Then, update the Firestore document for this user
                     const userProfileRef = firebase.firestore().collection('user_profile').doc(user.uid);
                     return userProfileRef.update({
-                        name: this.profile.name,
+                        name: this.profile.username,
                         gender: this.profile.gender,
-                        birthday: this.profile.birthday,
-                        emailNotifications: this.profile.email,
-                        profile_pic: this.profile.profile_pic // Assuming this field should be updated as well
+                        birthday: this.profile.dob,
+                        email: this.profile.emailNotifications, // Assuming this is a boolean
+                        profile_pic: this.profile.photoURL,
+                        userId: user.uid, // This should be consistent; consider if it needs to be updated
                     });
                 }).then(() => {
                     console.log('Profile updated successfully');
-                    alert('You have finished setting up your profile!');
-                }).catch((error) => {
+                    alert('Profile updated successfully!');
+                }).catch(error => {
                     console.error('Error updating profile:', error);
                 });
             } else {
                 console.log('No user is currently signed in.');
             }
         },
+
         editPicture() {
             // Implement logic to edit the profile picture
             console.log('Edit picture');
@@ -103,9 +117,9 @@ export default {
         uploadImage(event) {
             const file = event.target.files[0];
             if (file) {
-                // Create a local URL for the selected file to display it immediately
+                // Create a URL for the file object for preview purposes
                 this.profile.photoURL = URL.createObjectURL(file);
-                // Upload the image to Firebase Storage and update the profile picture URL
+                // Proceed to upload the file
                 this.updateProfilePicture(file);
             }
         },
@@ -113,35 +127,47 @@ export default {
         async updateProfilePicture(file) {
             const user = firebase.auth().currentUser;
             if (user) {
+                this.loading = true; // Start the loading process
                 const storageRef = firebase.storage().ref(`profile_pictures/${user.uid}/${file.name}`);
-
                 try {
                     const uploadTaskSnapshot = await storageRef.put(file);
                     const downloadURL = await uploadTaskSnapshot.ref.getDownloadURL();
+                    this.profile.photoURL = downloadURL; // Update local state with the new URL for preview
 
-                    await user.updateProfile({ photoURL: downloadURL });
-                    this.profile.photoURL = downloadURL;
-
-                    // Force a refresh of the user's profile data
-                    await user.reload();
-                    this.fetchUserProfile();
-
-                    console.log('Profile picture updated successfully');
+                    // Update Firestore with the new photo URL
+                    await this.updateFirestoreProfile(user.uid, downloadURL);
+                    console.log('Profile picture updated successfully with URL:', downloadURL);
                 } catch (error) {
                     console.error('Error updating profile picture:', error);
+                } finally {
+                    this.loading = false; // End the loading process
+                    console.log('Setting loading to false'); // Diagnostic log
                 }
-            } else {
-                console.log('No user is currently signed in.');
             }
-        }
+        },
 
 
+        async updateFirestoreProfile(userId, photoURL) {
+            // Update Firebase Auth profile if you want to keep it in sync
+            await firebase.auth().currentUser.updateProfile({ photoURL });
 
+            // Update Firestore user profile document
+            const userProfileRef = firebase.firestore().collection('user_profile').doc(userId);
+            await userProfileRef.update({ profile_pic: photoURL });
+        },
 
+        async updateProfileWithNewPhoto(downloadURL) {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                await user.updateProfile({ photoURL: downloadURL });
+                const userProfileRef = firebase.firestore().collection('user_profile').doc(user.uid);
+                await userProfileRef.update({ profile_pic: downloadURL });
+            }
+        },
     }
-
 };
 </script>
+
 
 
 <style scoped>
