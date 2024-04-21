@@ -52,29 +52,33 @@ export default {
                 .map(p => p.id);
         },
         savePreferences() {
-            const userPreferencesRef = firebase.firestore().collection('user_preferences');
             const userId = firebase.auth().currentUser.uid;
+            if (!userId) {
+                alert('You must be logged in to save preferences.');
+                return;
+            }
 
-            const batch = firebase.firestore().batch();
-            this.preferences.forEach((pref) => {
-                const prefRef = firebase.firestore().collection('dining_preferences').doc(pref.id);
-                batch.update(prefRef, { selected: pref.selected });
-            });
+            const userPreferencesRef = firebase.firestore().collection('user_preferences').doc(userId);
 
-            batch.commit()
+            // Save only the IDs of the selected preferences
+            const selectedPreferences = this.preferences
+                .filter(p => p.selected)
+                .map(p => p.id);
+
+            userPreferencesRef.set({
+                userId: userId,
+                preferences: selectedPreferences
+            })
                 .then(() => {
-                    return userPreferencesRef.doc(userId).set({
-                        preferences: this.selectedPreferences
-                    });
-                })
-                .then(() => {
-                    alert('You have successfully saved your preference!');
+                    alert('You have successfully saved your preferences!');
+                    // Optionally, navigate the user to another page or perform other actions
                 })
                 .catch(error => {
                     console.error('Error saving preferences:', error);
                     alert('There was an error saving your preferences. Please try again.');
                 });
         }
+
 
     }
 };
