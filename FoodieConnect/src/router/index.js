@@ -58,7 +58,7 @@ const routes = [
     component: PostPage,
   },
   {
-    path: "/saved-list", // Define the path for the saved list page
+    path: "/saved-list", 
     name: "SavedList",
     component: SavedList,
   }
