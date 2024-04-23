@@ -8,6 +8,7 @@ import UpdateProfile from "@/views/UpdateProfile.vue";
 import PostPage from "@/views/PostPage.vue";
 import PostDetailView from "@/views/PostDetailView.vue";
 import UpdatePreference from "@/views/UpdatePreference.vue";
+import Communities from "@/views/Communities.vue";
 
 const routes = [
   {
@@ -52,10 +53,15 @@ const routes = [
     component: UpdatePreference,
   },
   {
-    path:"/postpage",
-    name:"postpage",
+    path: "/postpage",
+    name: "postpage",
     component: PostPage,
-  }
+  },
+  {
+    path: "/communities",
+    name: "communities",
+    component: Communities,
+  },
 ];
 const router = createRouter({
   history: createWebHistory(),
