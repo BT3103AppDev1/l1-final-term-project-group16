@@ -2,7 +2,7 @@
     <div class="profile-card">
         <div class="edit-profile-pic">
             <img :src="profile.photoURL" alt="Profile Picture" @click="triggerFileInput">
-            <input type="file" id="fileInput" ref="fileInput" @change="uploadImage" accept="image/jpeg, image/png"
+            <input type="file" id="fileInput" ref="fileInput" @change="handleFileUpload" accept="image/jpeg, image/png"
                 hidden>
         </div>
         <h2>User Profile</h2>
@@ -14,7 +14,7 @@
             <div class="form-group">
                 <label for="gender">Gender</label>
                 <select id="gender" v-model="profile.gender">
-                    <option value="" disabled selected>Select...</option>
+                    <option value="" disabled>Select...</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import firebase from '@/firebase'; // Adjust the path to your firebase.js file
+import { firebase, db, storage } from '@/firebase'; // Adjust the path to your firebase.js file
 
 export default {
     data() {
@@ -49,8 +49,8 @@ export default {
                 username: '',
                 gender: '',
                 dob: '',
-                emailNotifications: '',
-                photoURL: '', // Profile picture URL
+                emailNotifications: false,
+                photoURL: '',
             },
             loading: false
         };
@@ -62,113 +62,80 @@ export default {
         fetchUserProfile() {
             const user = firebase.auth().currentUser;
             if (user) {
-                const userProfileRef = firebase.firestore().collection('user_profile').doc(user.uid);
+                const userProfileRef = db.collection('user_profile').doc(user.uid);
                 userProfileRef.get().then(doc => {
                     if (doc.exists) {
-                        const data = doc.data();
-                        this.profile.username = data.name || user.displayName;
-                        this.profile.gender = data.gender;
-                        this.profile.dob = data.birthday;
-                        this.profile.emailNotifications = data.email;
-                        this.profile.photoURL = data.profile_pic || user.photoURL; // Make sure this is the permanent URL from Firebase Storage
-                        console.log('Fetched user profile:', data); // Add this line for debugging
+                        this.profile = {
+                            username: doc.data().name || '',
+                            gender: doc.data().gender || '',
+                            dob: doc.data().birthday || '',
+                            emailNotifications: doc.data().email || false,
+                            photoURL: doc.data().profile_pic || '',
+                        };
                     }
                 }).catch(error => {
                     console.error("Error fetching user profile:", error);
                 });
             }
         },
-
-
         updateProfile() {
             const user = firebase.auth().currentUser;
             if (user) {
-                user.updateProfile({
-                    displayName: this.profile.username,
-                    photoURL: this.profile.photoURL,
+                this.loading = true;
+                const userProfileRef = db.collection('user_profile').doc(user.uid);
+                userProfileRef.update({
+                    name: this.profile.username,
+                    gender: this.profile.gender,
+                    birthday: this.profile.dob,
+                    email: this.profile.emailNotifications
                 }).then(() => {
-                    const userProfileRef = firebase.firestore().collection('user_profile').doc(user.uid);
-                    return userProfileRef.update({
-                        name: this.profile.username,
-                        gender: this.profile.gender,
-                        birthday: this.profile.dob,
-                        email: this.profile.emailNotifications, // Assuming this is a boolean
-                        profile_pic: this.profile.photoURL,
-                        userId: user.uid, // This should be consistent; consider if it needs to be updated
-                    });
-                }).then(() => {
-                    console.log('Profile updated successfully');
                     alert('Profile updated successfully!');
+                    this.loading = false;
                 }).catch(error => {
                     console.error('Error updating profile:', error);
+                    this.loading = false;
                 });
-            } else {
-                console.log('No user is currently signed in.');
             }
-        },
-
-        editPicture() {
-            // Implement logic to edit the profile picture
-            console.log('Edit picture');
         },
         triggerFileInput() {
             this.$refs.fileInput.click();
         },
-        uploadImage(event) {
+        handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                // Create a URL for the file object for preview purposes
-                this.profile.photoURL = URL.createObjectURL(file);
-                // Proceed to upload the file
-                this.updateProfilePicture(file);
+                this.uploadImageToStorage(file);
             }
         },
-
-        async updateProfilePicture(file) {
+        async uploadImageToStorage(file) {
             const user = firebase.auth().currentUser;
-            if (user) {
-                this.loading = true; // Start the loading process
-                const storageRef = firebase.storage().ref(`profile_pictures/${user.uid}/${file.name}`);
+            if (user && file) {
+                this.loading = true;
+                const fileRef = storage.ref(`profile_pictures/${user.uid}/${file.name}`);
                 try {
-                    const uploadTaskSnapshot = await storageRef.put(file);
-                    const downloadURL = await uploadTaskSnapshot.ref.getDownloadURL();
-                    this.profile.photoURL = downloadURL; // Update local state with the new URL for preview
-
-                    // Update Firestore with the new photo URL
+                    await fileRef.put(file);
+                    const downloadURL = await fileRef.getDownloadURL();
+                    this.profile.photoURL = downloadURL;
                     await this.updateFirestoreProfile(user.uid, downloadURL);
-                    console.log('Profile picture updated successfully with URL:', downloadURL);
+                    this.loading = false;
                 } catch (error) {
-                    console.error('Error updating profile picture:', error);
-                } finally {
-                    this.loading = false; // End the loading process
-                    console.log('Setting loading to false'); // Diagnostic log
+                    console.error('Error uploading image:', error);
+                    this.loading = false;
                 }
             }
         },
-
-
-        async updateFirestoreProfile(userId, photoURL) {
-            // Update Firebase Auth profile if you want to keep it in sync
-            await firebase.auth().currentUser.updateProfile({ photoURL });
-
-            // Update Firestore user profile document
-            const userProfileRef = firebase.firestore().collection('user_profile').doc(userId);
-            await userProfileRef.update({ profile_pic: photoURL });
-        },
-
-        async updateProfileWithNewPhoto(downloadURL) {
-            const user = firebase.auth().currentUser;
-            if (user) {
-                await user.updateProfile({ photoURL: downloadURL });
-                const userProfileRef = firebase.firestore().collection('user_profile').doc(user.uid);
-                await userProfileRef.update({ profile_pic: downloadURL });
+        async updateFirestoreProfile(userId, imageUrl) {
+            const userProfileRef = db.collection('user_profile').doc(userId);
+            try {
+                await userProfileRef.update({
+                    profile_pic: imageUrl
+                });
+            } catch (error) {
+                console.error('Error updating profile with image URL:', error);
             }
         },
     }
 };
 </script>
-
-
 
 <style scoped>
 .profile-card {
@@ -176,13 +143,9 @@ export default {
     padding: 40px;
     border-radius: 20px;
     width: 100%;
-    /* If you want the card to be full width of the container */
     max-width: 100%;
-    /* Adjust this value to your preference */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    /* Other styles... */
 }
-
 
 .profile-card h2 {
     border-bottom: 1px solid #ccc;
@@ -208,11 +171,6 @@ export default {
     border-radius: 5px;
     border: 1px solid #ccc;
     box-sizing: border-box;
-}
-
-.form-group input[type="text"]:placeholder-shown,
-.form-group input[type="date"]:placeholder-shown {
-    font-style: italic;
 }
 
 .form-group input[type="submit"] {
@@ -279,33 +237,22 @@ input:checked+.slider:before {
 
 .edit-profile-pic {
     background-color: #ccc;
-    /* Placeholder color */
     border-radius: 50%;
     width: 120px;
-    /* Adjust as needed */
     height: 120px;
-    /* Adjust as needed */
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 20px auto;
-    /* Center the circle */
     font-size: 0.8rem;
-    /* Adjust as needed */
     color: black;
-    /* Adjust as needed */
     margin-bottom: 30px;
-    /* Space between the edit circle and the form */
     cursor: pointer;
-    /* Indicates the image is clickable */
 }
 
 .edit-profile-pic img {
     width: 100%;
-    /* Make the image fill the circle */
     height: 100%;
-    /* Make the image fill the circle */
     border-radius: 50%;
-    /* Make the image round */
 }
 </style>
