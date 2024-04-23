@@ -61,6 +61,7 @@ export default {
 <style scoped>
 .post-detail {
     text-align: center;
+    color: black;
     margin: auto; /* Centers the detail section in the parent */
     max-width: 800px; 
 }

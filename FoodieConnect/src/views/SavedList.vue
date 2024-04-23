@@ -9,6 +9,10 @@
         <h2>Create New List</h2>
         <input type="text" v-model="newListName" placeholder="List Title" />
         <input type="text" v-model="newCategories" placeholder="Categories (comma separated)" />
+        <div>
+          <label for="list-cover-image">Cover Image:</label>
+          <input type="file" id="list-cover-image" @change="handleCoverImageChange" />
+        </div>
         <button class="create-list-button" @click="createNewList">Save List</button>
       </div>
     </div>
@@ -23,6 +27,9 @@
       <div>
         <label>Categories:</label>
         <input type="text" v-model="list.categories" placeholder="Add categories separated by commas" />
+      </div>
+      <div v-if="list.coverUrl" class="list-cover">
+        <img :src="list.coverUrl" alt="Cover Image" class="cover-image">
       </div>
       <div class="list-container">
         <div class="list-item" v-for="restaurant in list.restaurants" :key="restaurant.id">
@@ -47,10 +54,11 @@
 </template>
 
 <script>
-import firebase from '@/firebase'; // Assuming you have a firebase.js file that initializes Firebase
+import firebase from '@/firebase'; 
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { ref, onMounted } from 'vue';
 import { db } from '@/firebase';
+import { storage } from '@/firebase'; 
 import {
   collection,
   addDoc,
@@ -68,6 +76,7 @@ export default {
     const newRestaurantName = ref('');
     const newListName = ref('');
     const newCategories = ref('');
+    const newListCoverUrl = ref('');
     const isModalOpen = ref(false);
     const auth = getAuth();
     let unsubscribeAuth = null;
@@ -91,7 +100,25 @@ export default {
       }
     };
 
+    const handleCoverImageChange = async (event) => {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
 
+      try {
+        const storageRef = firebase.storage().ref(); // This is the correct usage with the compat library
+        const fileRef = storage.ref(`covers/${Date.now()}-${file.name}`);
+        await fileRef.put(file);
+        const fileUrl = await fileRef.getDownloadURL();
+
+        // Store the URL in your new list data
+        newListCoverUrl.value = fileUrl;
+      } catch (error) {
+        console.error('Error uploading cover image:', error);
+        alert('Error uploading image.');
+      }
+    };
 
     const createNewList = async () => {
       if (!newListName.value || !newCategories.value) {
@@ -111,7 +138,8 @@ export default {
         const docRef = await addDoc(listsCollectionRef, {
           name: newListName.value,
           categories: newCategories.value.split(',').map(c => c.trim()),
-          restaurants: []
+          restaurants: [],
+          coverUrl: newListCoverUrl.value
         });
         console.log("New list created with ID:", docRef.id);
         await fetchLists(auth.currentUser.uid);
@@ -272,7 +300,9 @@ export default {
       addRestaurant,
       removeRestaurant,
       deleteList,
-      generateListLink
+      generateListLink,
+      handleCoverImageChange,
+      newListCoverUrl
     };
   }
 };
@@ -316,7 +346,7 @@ export default {
 }
 
 .create-list-button {
-  background-color: #007bff;
+  background-color: #7b1c2a;
   color: white;
   border: none;
   border-radius: 4px;
@@ -423,12 +453,13 @@ button:hover {
 
 .delete-button {
   background-color: #ff6b6b;
-  color: #fff;
+  color: black;
   border: none;
   border-radius: 4px;
   padding: 5px 10px;
   font-size: 0.8em;
   margin-left: 10px;
+  font-weight: bold;
 }
 
 .delete-button:hover {
@@ -436,12 +467,13 @@ button:hover {
 }
 
 .add-restaurant-button {
-  background-color: #48c774;
-  color: #fff;
+  background-color: #f1b708;
+  color: black;
   border: none;
   border-radius: 4px;
   padding: 5px 10px;
   font-size: 0.8em;
+  font-weight: bold;
   margin-left: 10px;
 }
 
@@ -458,6 +490,17 @@ button:hover {
 
   .list-section {
     padding: 15px;
+  }
+
+  .list-cover {
+  text-align: center; 
+  margin-bottom: 10px; 
+  }
+
+  .cover-image {
+    max-width: 100%; 
+    height: auto; 
+    border-radius: 4px; 
   }
 }
 </style>

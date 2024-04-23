@@ -135,7 +135,7 @@ export default {
   display: block;
   width: 60px;
   height: 60px;
-  background-color: #4CAF50;
+  background-color: #f1b708;
   color: white;
   font-size: 2em;
   text-align: center;
@@ -146,7 +146,7 @@ export default {
 }
 
 .add-post:hover {
-  background-color: #45a049;
+  background-color: #fd9800;
 }
 
 .search-container {
@@ -168,14 +168,15 @@ export default {
   padding: 5px 15px;
   border: none;
   border-radius: 5px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: #f1b708;
+  color: black;
   cursor: pointer;
   margin-left: 10px;
+  font-weight: bold;
 }
 
 .search-button:hover {
-  background-color: #45a049;
+  background-color: #fd9800;
 }
 
 .tag-filter {

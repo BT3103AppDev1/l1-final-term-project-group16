@@ -1,13 +1,14 @@
 <template>
     <div id="sidebar">
+        <div class="logo-container">
+            <RouterLink to="/homepage">
+                <img src="@/assets/icon.jpg" alt="Logo" class="logo" />
+            </RouterLink>
+        </div>
         <RouterLink to="/homepage" class="menu-item">Home</RouterLink>
         <RouterLink to="/profile" class="menu-item">Profile</RouterLink>
-        <!-- <RouterLink to="/food-diary" class="menu-item">Food Diary</RouterLink> -->
         <RouterLink to="/postpage" class="menu-item">New Post</RouterLink>
         <RouterLink to="/saved-list" class="menu-item">Saved List</RouterLink>
-        <!-- <RouterLink to="/food-near-me" class="menu-item">Food Near Me</RouterLink>
-        <RouterLink to="/communities" class="menu-item">Communities</RouterLink>
-        <RouterLink to="/faq" class="menu-item">FAQ</RouterLink> -->
         <user-info></user-info>
     </div>
 </template>
@@ -38,6 +39,19 @@ export default {
     flex-direction: column;
     justify-content: center;
     z-index: 1000;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px; /* Adjust as needed */
+}
+
+.logo {
+    border-radius: 50%;
+    max-width: 100%; 
+    height: auto; 
 }
 
 .menu-item {

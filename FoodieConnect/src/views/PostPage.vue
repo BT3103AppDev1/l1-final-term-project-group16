@@ -238,7 +238,7 @@ export default {
 
 .preview-image {
   max-width: 100%;
-  max-height: 300px;
+  max-height: auto;
   /* Limit height to prevent very tall images */
   object-fit: contain;
   /* Contain the image within the element without stretching */
@@ -251,7 +251,7 @@ export default {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 100%;
+  height: auto;
   color: #aaa;
   font-size: 1.5em;
 }
@@ -271,22 +271,20 @@ export default {
 
 .submit-button {
   max-width: 200px;
-  /* Maximum width of the button */
   padding: 15px;
   margin: 20px auto;
-  /* Center button horizontally */
-  background-color: #4CAF50;
-  color: white;
+  background-color: #f1b708;
+  color: black;
+  font-weight: bold;
   border: none;
   border-radius: 5px;
   font-size: 1em;
   cursor: pointer;
   display: block;
-  /* Make button a block-level element */
 }
 
 .submit-button:hover {
-  background-color: #45a049;
+  background-color: #fd9800;
 }
 
 .modal {
@@ -360,29 +358,31 @@ export default {
   width: 100%;
   padding: 10px;
   margin-top: 10px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: #f1b708;
+  color: black;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .confirm-button:hover {
-  background-color: #45a049;
+  background-color: #fd9800;
 }
 
 .ok-button {
   padding: 10px 20px;
   margin-top: 10px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: #f1b708;
+  color: black;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-size: 1em;
+  font-weight: bold;
 }
 
 .ok-button:hover {
-  background-color: #45a049;
+  background-color: #fd9800;
 }
 </style>
