@@ -2,12 +2,12 @@
     <div id="sidebar">
         <RouterLink to="/homepage" class="menu-item">Home</RouterLink>
         <RouterLink to="/profile" class="menu-item">Profile</RouterLink>
-        <RouterLink to="/food-diary" class="menu-item">Food Diary</RouterLink>
+        <!-- <RouterLink to="/food-diary" class="menu-item">Food Diary</RouterLink> -->
         <RouterLink to="/postpage" class="menu-item">New Post</RouterLink>
         <RouterLink to="/saved-list" class="menu-item">Saved List</RouterLink>
-        <RouterLink to="/food-near-me" class="menu-item">Food Near Me</RouterLink>
+        <!-- <RouterLink to="/food-near-me" class="menu-item">Food Near Me</RouterLink>
         <RouterLink to="/communities" class="menu-item">Communities</RouterLink>
-        <RouterLink to="/faq" class="menu-item">FAQ</RouterLink>
+        <RouterLink to="/faq" class="menu-item">FAQ</RouterLink> -->
         <user-info></user-info>
     </div>
 </template>

@@ -1,7 +1,7 @@
 <template>
   <div class="saved-lists-page">
     <h1>Saved Lists</h1>
-    <button @click="isModalOpen = true">Create New List</button>
+    <button class="create-list-button" @click="isModalOpen = true">Create New List</button>
 
     <div v-if="isModalOpen" class="modal">
       <div class="modal-content">
@@ -9,18 +9,16 @@
         <h2>Create New List</h2>
         <input type="text" v-model="newListName" placeholder="List Title" />
         <input type="text" v-model="newCategories" placeholder="Categories (comma separated)" />
-        <button @click="createNewList">Save List</button>
+        <button class="create-list-button" @click="createNewList">Save List</button>
       </div>
     </div>
 
-    <section v-for="list in lists" :key="list.id" class="list-section">
+    <section v-for="(list, index) in lists" :key="list.id" class="list-section">
       <h2>{{ list.name }}</h2>
       <div>
         <label>Name:</label>
         <input type="text" v-model="list.name" />
-        <button @click="updateListNameAndCategories(list.id, list.name, list.categories)">
-          Update
-        </button>
+        <button @click="updateListNameAndCategories(list.id, list.name, list.categories)">Update</button>
       </div>
       <div>
         <label>Categories:</label>
@@ -29,155 +27,348 @@
       <div class="list-container">
         <div class="list-item" v-for="restaurant in list.restaurants" :key="restaurant.id">
           {{ restaurant.name }}
-          <button @click="removeRestaurant(list.id, restaurant.id)">Remove</button>
+          <button class="remove-button" @click="removeRestaurant(list.id, restaurant.id)">Remove</button>
         </div>
       </div>
       <div>
-        <input type="text" v-model="newRestaurantName" placeholder="Add a restaurant" />
-        <button @click="addRestaurant(list.id, { name: newRestaurantName })">
-          Add Restaurant
-        </button>
+        <input type="text" v-model="list.newRestaurantName" placeholder="Add a restaurant" />
+        <button class="add-restaurant-button" @click="addRestaurant(list.id, list.newRestaurantName)">Add
+          Restaurant</button>
+      </div>
+      <button class="delete-button" @click="deleteList(list.id)">Delete List</button>
+      <button class="generate-link-button" @click="generateListLink(list.id)">Generate Link</button>
+      <!-- Add this button -->
+      <div v-if="list.generatedLink">
+        <label>Generated Link:</label>
+        <input type="text" :value="list.generatedLink" readonly />
       </div>
     </section>
   </div>
 </template>
-  
+
 <script>
-  import { ref, onMounted } from 'vue';
-  import { db } from '@/firebase'; 
-  import { collection, addDoc, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
-  
-  export default {
-    name: 'List',
-    setup() {
-      const lists = ref([]);
-      const newRestaurantName = ref('');
-      const newListName = ref('');
-      const newCategories = ref('');
-      const isModalOpen = ref(false);
+import firebase from '@/firebase'; // Assuming you have a firebase.js file that initializes Firebase
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { ref, onMounted } from 'vue';
+import { db } from '@/firebase';
+import {
+  collection,
+  addDoc,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc
+} from 'firebase/firestore';
 
-      const fetchLists = async () => {
-        const querySnapshot = await getDocs(collection(db, 'your_lists_collection'));
-        lists.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      };
+export default {
+  name: 'List',
+  setup() {
+    const lists = ref([]);
+    const newRestaurantName = ref('');
+    const newListName = ref('');
+    const newCategories = ref('');
+    const isModalOpen = ref(false);
+    const auth = getAuth();
+    let unsubscribeAuth = null;
 
-      const createNewList = async () => {
-        if (!newListName.value || !newCategories.value) {
-          alert('Please fill out all fields.'); // Basic validation check
-          return;
-        }
+    // Function to fetch lists for the current user
+    const fetchLists = async (uid) => {
+      console.log(`Fetching lists for user ID: ${uid}`); // Log the path you're accessing
+      const userListsRef = collection(db, 'user_lists', uid, 'lists');
+      try {
+        const querySnapshot = await getDocs(userListsRef);
+        lists.value = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          newRestaurantName: '', // Add this new property for each list
+          ...doc.data(),
+        }));
 
-        try {
-          const newList = {
-            name: newListName.value,
-            categories: newCategories.value.split(',').map(c => c.trim()),
-            restaurants: []
-          };
-          await addDoc(collection(db, 'your_lists_collection'), newList);
-          await fetchLists(); // Refresh the lists
-          isModalOpen.value = false;
-          newListName.value = '';
-          newCategories.value = '';
-        } catch (error) {
-          console.error('Error creating new list:', error);
-          alert('There was an error saving the list. Please try again. ' + error.message); // Add error.message for more info
-        }
-      };
+        console.log("Lists fetched:", lists.value); // Log fetched lists
+      } catch (error) {
+        console.error("Error fetching lists:", error); // Log any errors
+        alert('Error fetching lists.');
+      }
+    };
 
 
-      const updateListNameAndCategories = async (listId, newName, newCategories) => {
-        const listRef = doc(db, 'your_lists_collection', listId);
-        await updateDoc(listRef, {
-          name: newName,
-          categories: newCategories.split(',').map(c => c.trim())
+
+    const createNewList = async () => {
+      if (!newListName.value || !newCategories.value) {
+        alert('Please fill out all fields.');
+        return;
+      }
+
+      if (!auth.currentUser) {
+        alert('Not authenticated. Please log in.');
+        return;
+      }
+
+      try {
+        console.log("Creating new list with name:", newListName.value);
+        const userDocRef = doc(db, 'user_lists', auth.currentUser.uid);
+        const listsCollectionRef = collection(userDocRef, 'lists');
+        const docRef = await addDoc(listsCollectionRef, {
+          name: newListName.value,
+          categories: newCategories.value.split(',').map(c => c.trim()),
+          restaurants: []
         });
-        await fetchLists(); // Refresh the lists
-      };
+        console.log("New list created with ID:", docRef.id);
+        await fetchLists(auth.currentUser.uid);
+        isModalOpen.value = false;
+        newListName.value = '';
+        newCategories.value = '';
+      } catch (error) {
+        console.error("Error creating new list:", error);
+      }
+    };
 
-      const addRestaurant = async (listId, restaurantName) => {
-        if (!restaurantName) return; // Guard clause if restaurant name is empty
-        const listRef = doc(db, 'your_lists_collection', listId);
-        // Fetch current list data
-        const listSnap = await getDocs(listRef);
+
+
+    const updateListNameAndCategories = async (listId, newName, newCategories) => {
+      const listRef = doc(db, 'user_lists', auth.currentUser.uid, 'lists', listId);
+      await updateDoc(listRef, {
+        name: newName,
+        categories: newCategories.split(',').map(c => c.trim()),
+      });
+
+      await fetchLists(auth.currentUser.uid);
+    };
+
+
+    const addRestaurant = async (listId, restaurantName) => {
+      if (!restaurantName) {
+        alert('Please enter a restaurant name.');
+        return;
+      }
+
+      try {
+        const listRef = doc(db, 'user_lists', auth.currentUser.uid, 'lists', listId);
+        const listSnap = await getDoc(listRef);
+        if (!listSnap.exists()) {
+          throw new Error('List does not exist.');
+        }
         const listData = listSnap.data();
-        // Add new restaurant
-        const updatedRestaurants = [...listData.restaurants, { name: restaurantName }];
+
+        // Ensure restaurants is an array
+        if (!Array.isArray(listData.restaurants)) {
+          listData.restaurants = [];
+        }
+
+        const updatedRestaurants = [
+          ...listData.restaurants,
+          { id: Date.now().toString(), name: restaurantName }, // Use the passed restaurantName
+        ];
         await updateDoc(listRef, {
           restaurants: updatedRestaurants
         });
-        await fetchLists(); // Refresh the lists
-        newRestaurantName.value = ''; // Clear the input field after adding
-      };
 
-      const removeRestaurant = async (listId, restaurantId) => {
-        const listRef = doc(db, 'your_lists_collection', listId);
-        // Fetch current list data
-        const listSnap = await getDocs(listRef);
-        const listData = listSnap.data();
-        // Remove restaurant by filtering out the one with the matching id
+        // Find the list in your lists array and reset the newRestaurantName for that list
+        const listIndex = lists.value.findIndex((list) => list.id === listId);
+        if (listIndex !== -1) {
+          lists.value[listIndex].newRestaurantName = ''; // Reset newRestaurantName for the list
+        }
+
+        await fetchLists(auth.currentUser.uid);
+      } catch (error) {
+        console.error('Error adding restaurant:', error);
+        alert('There was an error adding the restaurant: ' + error.message);
+      }
+    };
+
+    const removeRestaurant = async (listId, restaurantId) => {
+      const listRef = doc(db, 'user_lists', auth.currentUser.uid, 'lists', listId);
+      try {
+        // Fetch the current list document
+        const listDoc = await getDoc(listRef);
+        if (!listDoc.exists()) {
+          throw new Error('List does not exist.');
+        }
+
+        // Get the data from the document
+        const listData = listDoc.data();
+
+        // Filter out the restaurant with the matching id
         const updatedRestaurants = listData.restaurants.filter(restaurant => restaurant.id !== restaurantId);
+
+        // Update the document with the new array of restaurants
         await updateDoc(listRef, {
           restaurants: updatedRestaurants
         });
-        await fetchLists(); // Refresh the lists
-      };
 
-      onMounted(fetchLists);
+        // Refresh the lists
+        await fetchLists(auth.currentUser.uid);
+      } catch (error) {
+        console.error('Error removing restaurant:', error);
+        alert('There was an error removing the restaurant: ' + error.message);
+      }
+    };
 
-      return {
-        lists,
-        newRestaurantName,
-        newListName,
-        newCategories,
-        isModalOpen,
-        createNewList,
-        updateListNameAndCategories,
-        addRestaurant,
-        removeRestaurant
-      };
-    }
-  };
+    const deleteList = async (listId) => {
+      try {
+        // Get the reference to the user's lists document
+        const userDocRef = doc(db, 'user_lists', auth.currentUser.uid, 'lists', listId);
+
+        // Delete the document
+        await deleteDoc(userDocRef);
+
+        console.log("List deleted successfully");
+
+        // Fetch the updated lists after deletion
+        await fetchLists(auth.currentUser.uid);
+      } catch (error) {
+        console.error("Error deleting list:", error);
+        alert('There was an error deleting the list: ' + error.message);
+      }
+    };
+
+    const generateListLink = async (listId) => {
+      try {
+        // Generate a unique link for the list (you can use Firebase Dynamic Links or any other method)
+        const generatedLink = `https://yourdomain.com/list/${listId}`;
+
+        const listIndex = lists.value.findIndex((list) => list.id === listId);
+        if (listIndex !== -1) {
+          lists.value[listIndex].generatedLink = generatedLink;
+        }
+
+      } catch (error) {
+        console.error('Error generating list link:', error);
+        alert('There was an error generating the list link: ' + error.message);
+      }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("User is signed in with UID:", user.uid);
+        fetchLists(user.uid);
+      } else {
+        console.log("No user is signed in.");
+        alert('Please log in to view your lists.');
+      }
+    });
+
+    onMounted(async () => {
+      unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          console.log("User is signed in with UID:", user.uid); // Log the UID for debugging
+          await fetchLists(user.uid);
+        } else {
+          console.log("User is not signed in."); // Log for debugging purposes
+          alert('Please log in to view your lists.');
+        }
+      });
+    });
+
+
+    return {
+      lists,
+      newRestaurantName,
+      newListName,
+      newCategories,
+      isModalOpen,
+      createNewList,
+      updateListNameAndCategories,
+      addRestaurant,
+      removeRestaurant,
+      deleteList,
+      generateListLink
+    };
+  }
+};
 </script>
-  
+
 <style scoped>
-  .saved-lists-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-  }
+.saved-lists-page {
+  min-height: calc(100vh - 40px);
+  padding: 10px;
+  margin-left: 220px;
+  width: calc(100% - 220px);
+  box-sizing: border-box;
+  overflow: auto;
+}
 
-  h1 {
-    margin-bottom: 20px;
-  }
+.list-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 20px;
+}
 
-  h2 {
-    margin-bottom: 10px;
-  }
+.remove-button {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 5px 10px;
+  margin-left: 10px;
+  font-size: 0.8em;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
 
-  .list-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px; /* Controls space between items */
-    justify-content: center; /* Centers items in the container */
-    margin-bottom: 20px;
-  }
+.remove-button::before {
+  content: '\f2ed';
+  font-family: 'FontAwesome';
+  margin-right: 5px;
+}
 
-  .list-item {
-    background-color: #a05252; /* The color of your items */
-    color: white; /* Text color */
-    padding: 10px 20px; /* Vertical and horizontal padding */
-    border-radius: 10px; /* Rounded corners */
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Optional shadow for depth */
-    cursor: pointer; /* Indicates the item is clickable */
-    transition: background-color 0.3s ease; /* Smooth background color transition on hover */
-  }
+.create-list-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 0.9em;
+  font-weight: bold;
+}
 
-  .list-item:hover {
-    background-color: #7b1c2a; /* Darker shade on hover */
-  }
+.list-item {
+  background-color: #a05252;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 10px;
+  width: auto;
+}
 
-  .modal {
+
+h1 {
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-bottom: 10px;
+}
+
+.list-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.list-item {
+  background-color: #a05252;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.list-item:hover {
+  background-color: #7b1c2a;
+}
+
+.modal {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -204,19 +395,69 @@
 }
 
 input[type="text"] {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 10px;
+  width: calc(100% - 22px);
+}
+
+label {
   display: block;
-  margin-bottom: 10px;
-  width: 90%;
-  padding: 5px;
+  margin-bottom: 5px;
+  font-size: 0.9em;
+  color: #495057;
 }
 
 button {
-  cursor: pointer;
-  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 0.9em;
   margin-top: 10px;
 }
 
+button:hover {
+  opacity: 0.8;
+}
+
+
+.delete-button {
+  background-color: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 0.8em;
+  margin-left: 10px;
+}
+
+.delete-button:hover {
+  background-color: #ff5252;
+}
+
+.add-restaurant-button {
+  background-color: #48c774;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 0.8em;
+  margin-left: 10px;
+}
+
+.add-restaurant-button:hover {
+  background-color: #32b643;
+}
+
+
 @media (max-width: 768px) {
-  /* Responsive adjustments */
+  .saved-lists-page {
+    margin-left: 10px;
+    width: calc(100% - 20px);
+  }
+
+  .list-section {
+    padding: 15px;
+  }
 }
 </style>

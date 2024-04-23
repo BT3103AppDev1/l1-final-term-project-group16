@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/components/Login.vue";
-import Logout from "../components/Logout.vue";
+import SignUp from '@/components/Signup.vue';
+import Logout from "@/components/Logout.vue";
 import About from "@/views/About.vue";
 import Homepage from "@/views/Homepage.vue";
 import ProfileView from "@/views/ProfileView.vue";
@@ -15,6 +16,11 @@ const routes = [
     path: "/", // The root path should only be declared once.
     name: "Login",
     component: Login,
+  },
+  {
+    path: '/signup',
+    name: 'Signup',
+    component: SignUp,
   },
   {
     path: "/logout",
