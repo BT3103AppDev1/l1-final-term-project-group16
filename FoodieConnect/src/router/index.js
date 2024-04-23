@@ -10,6 +10,7 @@ import PostPage from "@/views/PostPage.vue";
 import PostDetailView from "@/views/PostDetailView.vue";
 import UpdatePreference from "@/views/UpdatePreference.vue";
 import SavedList from "@/views/SavedList.vue";
+import Communities from "@/views/Communities.vue";
 
 const routes = [
   {
@@ -43,7 +44,7 @@ const routes = [
     component: ProfileView,
   },
   {
-    path: "/update-profile", // Add this route for UpdateProfile
+    path: "/update-profile", 
     name: "UpdateProfile",
     component: UpdateProfile,
   },
@@ -59,15 +60,20 @@ const routes = [
     component: UpdatePreference,
   },
   {
-    path:"/postpage",
-    name:"postpage",
+    path: "/postpage",
+    name: "postpage",
     component: PostPage,
   },
   {
     path: "/saved-list", 
     name: "SavedList",
     component: SavedList,
-  }
+  },
+  {
+    path: "/communities",
+    name: "communities",
+    component: Communities,
+  },
 ];
 const router = createRouter({
   history: createWebHistory(),
