@@ -13,7 +13,7 @@
 
 <script>
 import PreferenceOption from '@/components/PreferenceOption.vue';
-import firebase from '@/firebase'; // Use your actual path to firebase config
+import firebase from '@/firebase'; 
 
 export default {
     components: {

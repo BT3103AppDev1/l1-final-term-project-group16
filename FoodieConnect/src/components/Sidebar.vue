@@ -9,6 +9,7 @@
         <RouterLink to="/profile" class="menu-item">Profile</RouterLink>
         <RouterLink to="/postpage" class="menu-item">New Post</RouterLink>
         <RouterLink to="/saved-list" class="menu-item">Saved List</RouterLink>
+        <RouterLink to="/communities" class="menu-item">Communities</RouterLink>
         <user-info></user-info>
     </div>
 </template>
@@ -75,3 +76,4 @@ export default {
     color: white;
 }
 </style>
+ 
